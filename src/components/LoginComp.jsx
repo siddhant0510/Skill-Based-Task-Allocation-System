@@ -1,7 +1,14 @@
 import { useState } from "react";
+import { useDispatch } from "react-redux";
+import { loginSuccess } from "../redux/authSlice";
+import { useNavigate } from "react-router-dom";
+
 export default function LoginComp() {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
+    const [loggedIn, setLoggedIn] = useState("");
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
     const handleSubmit = (e) => {
         e.preventDefault();
         const reqoptions = {
@@ -9,7 +16,7 @@ export default function LoginComp() {
                 "Content-Type": "application/json"
 
             },
-            body: JSON.stringify({ password }),
+            body: JSON.stringify({ username, password }),
             method: "POST",
 
         }
@@ -18,14 +25,24 @@ export default function LoginComp() {
                 if (res.status === 200) {
                     return res.json();
                 } else if (res.status === 404) {
+                    setLoggedIn("wrong credentials");
                     return {};
                 }
             })
             .then(data => {
                 console.log(data);
                 //redux satate modify
+                dispatch(loginSuccess({ user: data.user, token: data.token }));
+
                 //routing to dashboard
-                
+                if (data.user.role === 1) { //admin
+                    navigate("/admin");
+                } else if (data.user.role === 2) { //user
+                    navigate("/user");
+                } else {
+                    navigate("/home");
+                }
+
             });
 
     };
@@ -59,6 +76,9 @@ export default function LoginComp() {
             </form>
             <p>username: {username} <br />
                 password: {password}</p>
+            <p>{loggedIn}</p>
+
+            
         </div>
     )
 }
